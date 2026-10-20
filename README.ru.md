@@ -36,12 +36,34 @@
 
 ### Основные действия
 
-1. Установите [Python](https://python.org) 3.10+.
-2. Установите требуемые зависимости:
+1. Установите [Python](https://python.org). Матрица CI базовой установки включает Python 3.10–3.14 под Linux и Python 3.13 под Windows. У OCR и распознавания речи есть дополнительные требования; их совместимость эта матрица не проверяет.
+2. Откройте терминал в каталоге проекта и создайте виртуальное окружение:
 
 ```shell
-pip install -r requirements.txt
+python -m venv .venv
 ```
+
+Активируйте его в Windows (командная строка, cmd):
+
+```bat
+.venv\Scripts\activate.bat
+```
+
+Или в Linux/macOS:
+
+```shell
+source .venv/bin/activate
+```
+
+Затем установите базовые зависимости:
+
+```shell
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip check
+```
+
+Базовая установка не включает пакеты OCR и распознавания речи. Установите соответствующие необязательные зависимости ниже, только если включаете эти функции в `config.py`. Запускайте бота также из активированного окружения.
 
 3. Создайте своего бота при помощи https://t.me/BotFather
 4. Вставьте токен, полученный от `@botfather`, в соответствующую переменную в файле `config.py` и измените остальные параметры в `config.py` требуемым образом.
@@ -76,14 +98,29 @@ telegram_proxy_password = ""
 
 ### Если требуется распознавание текста на картинках
 
-1. Установите [Tesseract](https://github.com/tesseract-ocr/tessdoc) и добавьте путь к исполняемому файлу (в Windows - tesseract.exe) в переменную окружения path.
-2. Перейдите в папку с данным скриптом и убедитесь, что tesseract.exe запускается из неё.
+1. В активированном окружении выполните `python -m pip install -r requirements-ocr.txt`.
+2. Установите [Tesseract](https://github.com/tesseract-ocr/tessdoc), данные нужных языков и добавьте каталог исполняемого файла в PATH (tesseract.exe в Windows). Проверьте командой `tesseract --version`.
+3. Установите `ocr = True` и настройте `ocr_languages` в `config.py`.
 
 ### Если требуется распознавание речи
 
-1. Для локального Whisper: установите скомпилированный [FFMPEG](https://ffmpeg.org/download.html) и добавьте путь к исполняемому файлу (в Windows - ffmpeg.exe) в переменную окружения path.
-2. Перейдите в папку с данным скриптом и убедитесь, что ffmpeg.exe запускается из неё.
-3. Для облачного STT: установите `stt_provider = "cloud"` и заполните `stt_base_url`, `stt_api_key`, `stt_model_name`, `stt_language` в `config.py` (OpenAI-compatible API).
+Выберите один способ и установите его зависимости в активированном окружении:
+
+- **Локальный Whisper:** выполните `python -m pip install -r requirements-voice-local.txt`. Установите [FFmpeg](https://ffmpeg.org/download.html), добавьте каталог исполняемого файла в PATH и проверьте командой `ffmpeg -version`. Установите `recognize_voice = True` и `stt_provider = "local"` в `config.py`. При первом запуске скачивается выбранная модель Whisper; Torch и модель могут потребовать значительного места на диске и оперативной памяти. Выбирайте версию Python, поддерживаемую одновременно [Whisper](https://github.com/openai/whisper#setup) и [PyTorch](https://pytorch.org/get-started/locally/): матрица CI базовой установки не подтверждает их совместимость. Для использования GPU следуйте инструкции установки Torch на сайте PyTorch.
+- **Облачный STT:** выполните `python -m pip install -r requirements-voice-cloud.txt`. Установите `recognize_voice = True`, `stt_provider = "cloud"` и заполните `stt_base_url`, `stt_api_key`, `stt_model_name`, `stt_language` в `config.py` (OpenAI-compatible API). Аудио отправляется настроенному провайдеру; локальные Whisper, Torch и FFmpeg для этого режима не нужны.
+
+Каждый необязательный файл зависимостей включает базовые зависимости. При необходимости можно установить несколько групп.
+
+### Проверка установки без Telegram
+
+В каталоге проекта, с активированным виртуальным окружением:
+
+```shell
+python -m pip check
+python -m unittest discover -s tests -v
+```
+
+Тесты используют фиктивную конфигурацию и временный каталог, а сетевые подключения блокируют. Они проверяют импорт бота, создание прокси-сессий и HTML-парсер предпросмотра без настоящего токена, пакетов распознавания и скачивания моделей. Доставка и сквозная обработка сообщений не проверяются. GitHub Actions выполняет те же проверки на указанной выше матрице; наличие задания не означает успешного запуска — смотрите результаты во вкладке Actions репозитория.
 
 ## Использование
 

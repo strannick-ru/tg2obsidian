@@ -36,12 +36,34 @@ The instructions below are intended for Windows users. For Linux and MacOS users
 
 ### Main Steps
 
-1. Install [Python](https://python.org) 3.10+.
-2. Install the required dependencies:
+1. Install [Python](https://python.org). The basic-installation CI matrix covers Python 3.10–3.14 on Linux and Python 3.13 on Windows. OCR and speech recognition have additional requirements; their compatibility is not checked by this matrix.
+2. Open a terminal in the project folder and create a virtual environment:
 
 ```shell
-pip install -r requirements.txt
+python -m venv .venv
 ```
+
+Activate it on Windows (Command Prompt):
+
+```bat
+.venv\Scripts\activate.bat
+```
+
+Or on Linux/macOS:
+
+```shell
+source .venv/bin/activate
+```
+
+Then install the basic dependencies:
+
+```shell
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip check
+```
+
+The basic installation does not install OCR or speech-recognition packages. Install the optional dependencies below only if you enable those features in `config.py`. Run the bot from the activated environment as well.
 
 3. Create your bot using https://t.me/BotFather
 4. Insert the token received from `@botfather` into the corresponding variable in the `config.py` file and modify the other parameters in `config.py` as required.
@@ -76,14 +98,29 @@ Notes:
 
 ### If Text Recognition on Images is Required
 
-1. Install [Tesseract](https://github.com/tesseract-ocr/tessdoc) and add the path to the executable file (tesseract.exe on Windows) to the system's PATH environment variable.
-2. Navigate to the folder containing this script and ensure that tesseract.exe can be run from it.
+1. In the activated environment, run `python -m pip install -r requirements-ocr.txt`.
+2. Install [Tesseract](https://github.com/tesseract-ocr/tessdoc), the required language data, and add the executable directory to PATH (tesseract.exe on Windows). Check it with `tesseract --version`.
+3. Set `ocr = True` and configure `ocr_languages` in `config.py`.
 
 ### If Speech Recognition is Required
 
-1. For local Whisper: install the compiled [FFMPEG](https://ffmpeg.org/download.html) and add the path to the executable file (ffmpeg.exe on Windows) to the system's PATH environment variable.
-2. Navigate to the folder containing this script and ensure that ffmpeg.exe can be run from it.
-3. For cloud STT: set `stt_provider = "cloud"` and fill `stt_base_url`, `stt_api_key`, `stt_model_name`, `stt_language` in `config.py` (OpenAI-compatible API).
+Choose one provider and install its dependencies in the activated environment:
+
+- **Local Whisper:** run `python -m pip install -r requirements-voice-local.txt`. Install [FFmpeg](https://ffmpeg.org/download.html), add its executable directory to PATH, and check it with `ffmpeg -version`. Set `recognize_voice = True` and `stt_provider = "local"` in `config.py`. The first run downloads the configured Whisper model; Torch and the model can require substantial disk space and memory. Choose a Python version supported by both [Whisper](https://github.com/openai/whisper#setup) and [PyTorch](https://pytorch.org/get-started/locally/); the basic-installation CI matrix does not establish their compatibility. GPU-specific Torch installation follows the PyTorch instructions.
+- **Cloud STT:** run `python -m pip install -r requirements-voice-cloud.txt`. Set `recognize_voice = True`, `stt_provider = "cloud"`, and fill `stt_base_url`, `stt_api_key`, `stt_model_name`, `stt_language` in `config.py` (OpenAI-compatible API). Audio is sent to the configured provider; local Whisper, Torch, and FFmpeg are not required for this mode.
+
+Each optional requirements file includes the basic dependencies. You can install more than one if needed.
+
+### Check the Installation Without Telegram
+
+From the project folder, with the virtual environment activated:
+
+```shell
+python -m pip check
+python -m unittest discover -s tests -v
+```
+
+The tests use a fake configuration, a temporary directory, and block network access. They check bot import, proxy-session creation, and the link-preview HTML parser, without a real token, recognition packages, or model downloads. They do not verify message delivery or end-to-end processing. GitHub Actions runs the same checks on the matrix above; a configured job is not evidence of a successful run—check the repository's Actions results.
 
 ## Usage
 
